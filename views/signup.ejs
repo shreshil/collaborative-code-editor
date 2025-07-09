@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Signup</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="auth-container">
+    <h2>Signup</h2>
+    <form method="POST" action="/api/auth/signup">
+      <input name="name" placeholder="Name" required /><br>
+      <input name="email" placeholder="Email" required /><br>
+      <input name="password" type="password" placeholder="Password" required /><br>
+      <button type="submit">Signup</button>
+    </form>
+    <a href="/login">Already have an account? Login</a>
+    <div id="error-message" class="error"></div>
+  </div>
+
+  <script>
+    // Handle form submission with fetch for better error handling
+    document.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          email: formData.get('email'),
+          password: formData.get('password')
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        window.location.href = '/login';
+      } else {
+        document.getElementById('error-message').textContent = data.message;
+      }
+    });
+  </script>
+</body>
+</html>

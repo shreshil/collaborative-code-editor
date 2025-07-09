@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Collaborative Code Editor</title>
+  <link rel="stylesheet" href="/css/style.css" />
+
+  <!-- CodeMirror CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+</head>
+<body>
+  <header>
+    <h2>Collaborative Code Editor</h2>
+    <div class="user-info">
+      <span id="user-name"><%= name %></span>
+      <button id="logout-btn">Logout</button>
+    </div>
+  </header>
+  
+  <div class="room-controls">
+    <label for="room">Room ID:</label>
+    <input type="text" id="roomInput" placeholder="Enter room name" />
+    <button onclick="joinRoom()">Join Room</button>
+  </div>
+
+  <textarea id="editor" placeholder="Start typing..."></textarea>
+
+  <div id="chat-container">
+    <div id="messages"></div>
+    <div class="chat-controls">
+      <input type="text" id="chatInput" placeholder="Type a message..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <!-- CodeMirror JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- App Logic -->
+  <script src="/js/editor.js"></script>
+</body>
+</html>

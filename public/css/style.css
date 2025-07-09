@@ -1,0 +1,29 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+}
+
+#editor {
+  width: 100%;
+  height: 200px;
+  margin: 10px 0;
+}
+
+#chat-container {
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+#messages {
+  height: 100px;
+  overflow-y: auto;
+  background: #df7070;
+  padding: 5px;
+}
+
+.chat-controls {
+  display: flex;
+  gap: 5px;
+}
+
