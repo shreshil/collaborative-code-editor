@@ -9,8 +9,7 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ message: 'Unauthorized' });
   
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch (err) {
     res.status(401).json({ message: 'Invalid token' });
@@ -21,7 +20,33 @@ function authMiddleware(req, res, next) {
 router.get('/:roomId/versions', authMiddleware, async (req, res) => {
   try {
     const doc = await Document.findOne({ roomId: req.params.roomId });
-    res.json(doc?.versions || []);
+    if (!doc) return res.json([]);
+    
+    res.json(doc.versions.map(v => ({
+      content: v.content,
+      savedBy: v.savedByName,
+      roomId: v.roomId,
+      createdAt: v.createdAt
+    })));
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete version endpoint
+router.delete('/:roomId/versions/:versionId', authMiddleware, async (req, res) => {
+  try {
+    const doc = await Document.findOne({ roomId: req.params.roomId });
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+    const versionIndex = parseInt(req.params.versionId);
+    if (isNaN(versionIndex) || versionIndex < 0 || versionIndex >= doc.versions.length) {
+      return res.status(400).json({ message: 'Invalid version index' });
+    }
+
+    doc.versions.splice(versionIndex, 1);
+    await doc.save();
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

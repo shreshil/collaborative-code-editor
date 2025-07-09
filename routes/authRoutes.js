@@ -43,14 +43,21 @@ router.post('/login', async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       sameSite: 'Lax',
-      secure: false, // Use true only with HTTPS in production
+      secure: false,
       maxAge: 24 * 60 * 60 * 1000
     });
 
-    res.status(200).json({ message: 'Login successful', user: { name: user.name } });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Login failed' });
+    res.json({ 
+      success: true,
+      redirect: '/editor',
+      user: { name: user.name }
+    });
+  }catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during login'
+    });
   }
 });
 
@@ -75,15 +82,6 @@ router.post('/logout', (req, res) => {
     sameSite: 'Lax'
   });
   res.status(200).json({ message: 'Logged out successfully' });
-});
-
-// View Routes
-router.get('/login-page', (req, res) => {
-  res.render('login');
-});
-
-router.get('/signup-page', (req, res) => {
-  res.render('signup');
 });
 
 module.exports = router;

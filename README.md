@@ -2,7 +2,7 @@
 
 A real-time collaborative code editor with built-in chat functionality, supporting multiple rooms and user authentication. Perfect for teams, classrooms, or remote pair programming.
 
-![editor + chat](<Screenshot (107).png>)
+![display of every feature](<Screenshot 2025-07-10 032433.png>)
 
 ---
 
@@ -14,6 +14,7 @@ A real-time collaborative code editor with built-in chat functionality, supporti
 -  User authentication (signup/login with JWT)
 -  Cursor position synchronization
 -  Local network access (collaborate over LAN)
+-  Version control(save and access codes )
 
 ---
 
@@ -98,7 +99,7 @@ Example:JWT_SECRET=superstrongjwtsecret123
 
 5. **Access the app**
 
-   - Open [http://localhost:5000/login](http://localhost:5000/login) in your browser.(use only 1 out of these two)
+   - Open [http://localhost:5000/login](http://localhost:5000/login) in your browser.
    - For LAN collaboration, use the local IP shown in the terminal.
 
 ---
@@ -119,6 +120,7 @@ Example:JWT_SECRET=superstrongjwtsecret123
 - **Room Management:** Each room has its own code and chat state.
 - **Cursor Sync:** Tracks and (optionally) displays user cursors.
 - **LAN Support:** Detects local IP for easy team collaboration on the same network.
+ **Version Control:** Save snapshots of code at any point.View complete version history per room and restore/delete with one click
 
 ---
 

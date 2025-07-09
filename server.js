@@ -6,6 +6,7 @@ const path = require('path');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 
 dotenv.config();
 const app = express();
@@ -35,6 +36,20 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB error:', err));
 
+// Auth middleware
+const checkAuth = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return next();
+  
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch (err) {
+    res.clearCookie('token');
+    next();
+  }
+};
+
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const editorRoutes = require('./routes/editorRoutes');
@@ -42,18 +57,49 @@ app.use('/api/auth', authRoutes);
 app.use('/api/editor', editorRoutes);
 
 // View Routes
-app.get('/login', (req, res) => res.render('login'));
-app.get('/signup', (req, res) => res.render('signup'));
+app.get('/login', checkAuth, (req, res) => {
+  if (req.user) return res.redirect('/editor');
+  res.render('login');
+});
 
-// Socket.IO with Version Control
+app.get('/signup', checkAuth, (req, res) => {
+  if (req.user) return res.redirect('/editor');
+  res.render('signup');
+});
+
+app.get('/editor', checkAuth, (req, res) => {
+  if (!req.user) return res.redirect('/login');
+  res.render('editor', { 
+    name: req.user.name,
+    userId: req.user.id 
+  });
+});
+
+// Socket.IO Authentication
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token || 
+               socket.handshake.headers.cookie?.split('token=')[1]?.split(';')[0];
+  
+  if (!token) return next(new Error('Authentication error'));
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error'));
+  }
+});
+
+// Socket.IO
 const Document = require('./models/Document');
 
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
+  console.log(`User connected: ${socket.user.name} (${socket.id})`);
 
-  // Cleanup function to prevent duplicates
   const cleanupRoom = () => {
     if (socket.currentRoom) {
+      console.log(`User ${socket.user.name} disconnected from room ${socket.currentRoom}`);
       socket.leave(socket.currentRoom);
       socket.removeAllListeners('code-change');
       socket.removeAllListeners('chat-message');
@@ -64,18 +110,15 @@ io.on('connection', (socket) => {
   socket.on('join-room', async (roomId) => {
     cleanupRoom();
     
-    // Join new room
     socket.join(roomId);
     socket.currentRoom = roomId;
+    console.log(`User ${socket.user.name} joined room ${roomId}`);
 
-    // Load or create document
     let doc = await Document.findOne({ roomId }) || 
               new Document({ roomId, currentContent: '', versions: [] });
     
-    // Send current state
     socket.emit('receive-code', doc.currentContent);
 
-    // Debounced code update handler
     let changeTimeout;
     socket.on('code-change', async ({ code }) => {
       clearTimeout(changeTimeout);
@@ -86,25 +129,40 @@ io.on('connection', (socket) => {
       }, 150);
     });
 
-    // Version save handler
-    socket.on('save-version', async () => {
-      doc.versions.unshift({ // Add to beginning of array
+    socket.on('save-version', async ({ roomId }) => {
+      doc.versions.unshift({
         content: doc.currentContent,
-        savedBy: socket.userId,
+        savedBy: socket.user.id,
+        savedByName: socket.user.name,
+        roomId: roomId,
         createdAt: new Date()
       });
       await doc.save();
       socket.emit('version-saved');
     });
 
-    // Chat handler (fixed duplicates)
-    socket.on('chat-message', async ({ user, message }) => {
-      const newMessage = { user, message, timestamp: new Date() };
+    socket.on('delete-version', async ({ versionIndex }) => {
+      if (versionIndex >= 0 && versionIndex < doc.versions.length) {
+        doc.versions.splice(versionIndex, 1);
+        await doc.save();
+        socket.emit('version-deleted', { versionIndex });
+      }
+    });
+
+    socket.on('chat-message', async ({ message }) => {
+      const newMessage = { 
+        user: socket.user.name,
+        message,
+        timestamp: new Date() 
+      };
       io.to(roomId).emit('receive-message', newMessage);
     });
   });
 
-  socket.on('disconnect', cleanupRoom);
+  socket.on('disconnect', () => {
+    cleanupRoom();
+    console.log(`User ${socket.user?.name || 'Unknown'} disconnected (${socket.id})`);
+  });
 });
 
 const PORT = process.env.PORT || 5000;
