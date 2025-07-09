@@ -79,7 +79,7 @@ mongodb+srv://<username>:<password>@cluster0.mongodb.net/<dbname>?retryWrites=tr
 
 JWT (JSON Web Token) is used for secure login sessions. You can use any long, random string as the secret.
 
-Example:JWT_SECRET=superstrongjwtsecret123
+Example:JWT_SECRET=superstrongjwtsecret
 
 ---
 
