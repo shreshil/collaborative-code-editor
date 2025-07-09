@@ -57,7 +57,7 @@ const activeRooms = new Map();
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  // Store references to our listeners so we can remove them later
+  // Store references to listeners so to remove them later
   const codeChangeHandler = ({ roomId, code }) => {
     activeRooms.set(roomId, code);
     socket.to(roomId).emit('receive-code', code);
@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
       activeRooms.set(roomId, '');
     }
 
-    // Send current code state
+    //Sends current code state
     socket.emit('receive-code', activeRooms.get(roomId));
 
     // Set up new listeners
@@ -106,5 +106,5 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on:
   - http://localhost:${PORT}
-  - http://${localIp}:${PORT}`);
+  - http://${localIp}:${PORT}`);  //only one port to use
 });

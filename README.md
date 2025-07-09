@@ -2,7 +2,7 @@
 
 A real-time collaborative code editor with built-in chat functionality, supporting multiple rooms and user authentication. Perfect for teams, classrooms, or remote pair programming.
 
-![App Screenshot](./screenshot.png) <!-- Add your screenshot file -->
+![editor + chat](<Screenshot (107).png>)
 
 ---
 

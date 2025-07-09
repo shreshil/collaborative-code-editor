@@ -7,7 +7,7 @@ let currentUser = "Anonymous";
 let isRemoteUpdate = false;
 let userCursorPosition = { line: 0, ch: 0 };
 
-// Initialize CodeMirror editor
+// Initializing CodeMirror editor
 const codeMirrorEditor = CodeMirror.fromTextArea(document.getElementById('editor'), {
   mode: 'javascript',
   theme: 'dracula',
@@ -16,7 +16,7 @@ const codeMirrorEditor = CodeMirror.fromTextArea(document.getElementById('editor
   indentWithTabs: false,
 });
 
-// Track cursor position
+// To track cursor position
 codeMirrorEditor.on("cursorActivity", () => {
   if (!isRemoteUpdate) {
     userCursorPosition = codeMirrorEditor.getCursor();
@@ -49,7 +49,7 @@ async function fetchCurrentUser() {
 
 document.addEventListener('DOMContentLoaded', fetchCurrentUser);
 
-// Real-time code sync
+//For real-time code sync
 function joinRoom() {
   if (!userFetched) {
     alert("Please wait, verifying user...");
@@ -58,7 +58,7 @@ function joinRoom() {
   const room = document.getElementById("roomInput").value;
   if (!room) return alert("Enter a room ID");
 
-  // Clean up previous listeners to prevent duplicates
+  // Cleaning up previous listeners to prevent duplicates
   socket.off("receive-code");
   socket.off("receive-message");
 
@@ -95,7 +95,7 @@ function joinRoom() {
     }, 150);
   });
 
-  // Chat message handling (with duplicate prevention)
+  // Chat message handling (preventing duplication)
   socket.on("receive-message", ({ user, message, timestamp }) => {
     const msgDiv = document.createElement('div');
     msgDiv.textContent = `[${new Date(timestamp).toLocaleTimeString()}] ${user}: ${message}`;
@@ -121,7 +121,7 @@ sendBtn.addEventListener("click", () => {
   }
 });
 
-// Handle logout
+//logout
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
   try {
     const response = await fetch('/api/auth/logout', {
