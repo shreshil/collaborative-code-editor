@@ -17,28 +17,6 @@ A real-time collaborative code editor with built-in chat functionality, supporti
 
 ---
 
-## **Architecture**
-
-```mermaid
-graph TD
-  A[Client (Browser)]
-  B[Express Server]
-  C[Socket.IO Server]
-  D[MongoDB]
-  E[CodeMirror Editor]
-  F[Authentication (JWT + Cookies)]
-
-  A -- HTTP/REST --> B
-  A -- WebSocket --> C
-  B -- DB Queries --> D
-  A -- Code/Chat Events --> C
-  C -- Broadcast Events --> A
-  B -- Auth Routes --> F
-  A -- CodeMirror --> E
-```
-
----
-
 ## **Folder Structure**
 
 ```
@@ -76,6 +54,33 @@ collab_code_editor/
    ```bash
    npm install
    ```
+---
+
+## 🛠️ Environment Variable Setup (If You’re New)
+
+ If you don’t have MongoDB installed locally, you can use MongoDB Atlas (cloud version) for free:
+
+### 🔹 MongoDB URI (MONGO_URI)
+
+1. Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create an account and login
+3. Click "Build a Database" → Choose **Free Tier**
+4. Set up your Cluster (you can name it anything)
+5. Go to your database dashboard → **Connect** → **Connect your application**
+6. Copy the URI like:
+mongodb+srv://<username>:<password>@cluster0.mongodb.net/<dbname>?retryWrites=true&w=majority
+7. Replace `<username>`, `<password>`, and `<dbname>` with your details
+8. Paste this into your `.env` file as: MONGO_URI=mongodb+srv://yourUser:yourPass@cluster0.mongodb.net/collab_code?retryWrites=true&w=majority
+
+---
+
+### 🔹  Set JWT Secret
+
+JWT (JSON Web Token) is used for secure login sessions. You can use any long, random string as the secret.
+
+Example:JWT_SECRET=superstrongjwtsecret123
+
+---
 
 3. **Configure environment variables**
 
@@ -124,12 +129,6 @@ collab_code_editor/
 3. Commit your changes (`git commit -am 'Add new feature'`)
 4. Push to the branch (`git push origin feature/YourFeature`)
 5. Open a Pull Request
-
----
-
-## **License**
-
-This project is licensed under the MIT License.
 
 ---
 

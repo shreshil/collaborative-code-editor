@@ -11,21 +11,16 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Get local IP for multi-machine access
-const { networkInterfaces } = require('os');
-const nets = networkInterfaces();
-const localIp = Object.values(nets).flat().find(ip => ip.family === 'IPv4' && !ip.internal)?.address;
-
 // CORS Setup
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5500', `http://${localIp}:5500`],
+    origin: ['http://localhost:5500', 'http://127.0.0.1:5500'],
     credentials: true
   }
 });
 
 app.use(cors({
-  origin: ['http://localhost:5500', `http://${localIp}:5500`],
+  origin: ['http://localhost:5500', 'http://127.0.0.1:5500'],
   credentials: true
 }));
 
@@ -43,7 +38,6 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const editorRoutes = require('./routes/editorRoutes');
-
 app.use('/api/auth', authRoutes);
 app.use('/api/editor', editorRoutes);
 
@@ -51,60 +45,67 @@ app.use('/api/editor', editorRoutes);
 app.get('/login', (req, res) => res.render('login'));
 app.get('/signup', (req, res) => res.render('signup'));
 
-// Room state management
-const activeRooms = new Map();
+// Socket.IO with Version Control
+const Document = require('./models/Document');
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  // Store references to listeners so to remove them later
-  const codeChangeHandler = ({ roomId, code }) => {
-    activeRooms.set(roomId, code);
-    socket.to(roomId).emit('receive-code', code);
-  };
-
-  const chatMessageHandler = ({ roomId, user, message }) => {
-    const timestamp = new Date().toISOString();
-    io.to(roomId).emit('receive-message', {
-      user,
-      message,
-      timestamp
-    });
-  };
-
-  socket.on('join-room', (roomId) => {
-    // Leave previous room if any
+  // Cleanup function to prevent duplicates
+  const cleanupRoom = () => {
     if (socket.currentRoom) {
       socket.leave(socket.currentRoom);
-      socket.off('code-change', codeChangeHandler);
-      socket.off('chat-message', chatMessageHandler);
+      socket.removeAllListeners('code-change');
+      socket.removeAllListeners('chat-message');
+      socket.removeAllListeners('save-version');
     }
+  };
 
+  socket.on('join-room', async (roomId) => {
+    cleanupRoom();
+    
     // Join new room
     socket.join(roomId);
     socket.currentRoom = roomId;
 
-    // Initialize room if doesn't exist
-    if (!activeRooms.has(roomId)) {
-      activeRooms.set(roomId, '');
-    }
+    // Load or create document
+    let doc = await Document.findOne({ roomId }) || 
+              new Document({ roomId, currentContent: '', versions: [] });
+    
+    // Send current state
+    socket.emit('receive-code', doc.currentContent);
 
-    //Sends current code state
-    socket.emit('receive-code', activeRooms.get(roomId));
+    // Debounced code update handler
+    let changeTimeout;
+    socket.on('code-change', async ({ code }) => {
+      clearTimeout(changeTimeout);
+      changeTimeout = setTimeout(async () => {
+        doc.currentContent = code;
+        await doc.save();
+        socket.to(roomId).emit('receive-code', code);
+      }, 150);
+    });
 
-    // Set up new listeners
-    socket.on('code-change', codeChangeHandler);
-    socket.on('chat-message', chatMessageHandler);
+    // Version save handler
+    socket.on('save-version', async () => {
+      doc.versions.unshift({ // Add to beginning of array
+        content: doc.currentContent,
+        savedBy: socket.userId,
+        createdAt: new Date()
+      });
+      await doc.save();
+      socket.emit('version-saved');
+    });
+
+    // Chat handler (fixed duplicates)
+    socket.on('chat-message', async ({ user, message }) => {
+      const newMessage = { user, message, timestamp: new Date() };
+      io.to(roomId).emit('receive-message', newMessage);
+    });
   });
 
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
+  socket.on('disconnect', cleanupRoom);
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on:
-  - http://localhost:${PORT}
-  - http://${localIp}:${PORT}`);  // only one port to use
-});
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

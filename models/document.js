@@ -1,0 +1,15 @@
+const mongoose = require('mongoose');
+
+const versionSchema = new mongoose.Schema({
+  content: String,
+  savedBy: String, // Store username instead of reference for simplicity
+  createdAt: { type: Date, default: Date.now }
+});
+
+const documentSchema = new mongoose.Schema({
+  roomId: { type: String, unique: true },
+  currentContent: String,
+  versions: [versionSchema]
+}, { timestamps: true });
+
+module.exports = mongoose.model('Document', documentSchema);
